@@ -178,6 +178,19 @@ function bail()
     }
 }
 
+/**
+ * Check if the IP address matches the proxy definition
+ *
+ * @param string    $remote_addr
+ * @param string    $proxy
+ * @return bool
+ *
+ * @todo Test me!
+ * @codeCoverageIgnore
+ */
+function proxy_match($remote_addr, $proxy)
+{
+}
 
 /**
  * Compute remote IP address
