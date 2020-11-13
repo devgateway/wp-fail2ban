@@ -190,14 +190,18 @@ function bail()
  */
 function proxy_match($remote_addr, $proxy)
 {
-    $remote_addr = inet_pton($remote_addr);
-
     if (false === strrpos($proxy, '/') {
-        return inet_pton($proxy) == $remote_addr;
+        return inet_pton($proxy) == inet_pton($remote_addr);
     } else {
         $cidr = explode('/', $proxy);
-        $proxy_addr = inet_pton($cidr[0]);
         $proxy_subnet = (int) $cidr[1];
+        $proxy_addr  = str_split(inet_pton($cidr[0]));
+        $remote_addr = str_split(inet_pton($remote_addr));
+
+        $addr_len = count($remote_addr);
+        if (count($proxy_addr) != $addr_len) {
+            return false; // different protocols
+        }
 
         // first, fill with contiguous bits
         $mask = str_repeat('f', $proxy_subnet >> 2);
@@ -207,18 +211,13 @@ function proxy_match($remote_addr, $proxy)
             case 2: $mask .= 'c'; break;
             case 1: $mask .= '8';
         }
-        // finally, pad with zero bits and pack
-        $mask = pack('H*', str_pad($mask, '0'));
+        // finally, pad with zero bits, pack, and split
+        $mask = str_split(pack('H*', str_pad($mask, $addr_len * 2, '0')));
 
         $cmp = function($b1, $b2, $m) {
             return $b1 & $m == $b2 & $m;
         }
-        $matched_bytes = array_map(
-            $cmp,
-            str_split($proxy_addr),
-            str_split($remote_addr),
-            str_split($mask)
-        );
+        $matched_bytes = array_map($cmp, $proxy_addr, $remote_addr, $mask);
         return !in_array(false, $matched_bytes);
     }
 }
