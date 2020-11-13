@@ -190,6 +190,22 @@ function bail()
  */
 function proxy_match($remote_addr, $proxy)
 {
+    $is_ipv4_remote_addr = false == strpos($remote_addr, ':');
+    $is_ipv4_proxy = false == strpos($proxy, ':');
+
+    if ($is_ipv4_remote_addr xor $is_ipv4_proxy) {
+        return false; // different protocols
+    } elseif ($is_ipv4_remote_addr) {
+        if (2 == count($cidr = explode('/', $proxy))) {
+            $net = ip2long($cidr[0]);
+            $mask = ~ ( pow(2, (32 - $cidr[1])) - 1 );
+        } else {
+            $net = ip2long($proxy);
+            $mask = -1;
+        }
+        return $net == ($ip & $mask);
+    } else {
+    }
 }
 
 /**
@@ -221,14 +237,8 @@ function remote_addr()
                 foreach ($proxies as $proxy) {
                     if ('#' == $proxy[0]) {
                         continue;
-                    } elseif (2 == count($cidr = explode('/', $proxy))) {
-                        $net = ip2long($cidr[0]);
-                        $mask = ~ ( pow(2, (32 - $cidr[1])) - 1 );
-                    } else {
-                        $net = ip2long($proxy);
-                        $mask = -1;
                     }
-                    if ($net == ($ip & $mask)) {
+                    if (proxy_match($remote_addr, $proxy)) {
                         return (false === ($len = strpos($_SERVER['HTTP_X_FORWARDED_FOR'], ',')))
                             ? $_SERVER['HTTP_X_FORWARDED_FOR']
                             : substr($_SERVER['HTTP_X_FORWARDED_FOR'], 0, $len);
