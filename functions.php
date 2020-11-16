@@ -190,7 +190,7 @@ function bail()
  */
 function proxy_match($remote_addr, $proxy)
 {
-    if (false === strrpos($proxy, '/') {
+    if (false === strrpos($proxy, '/')) {
         return inet_pton($proxy) == inet_pton($remote_addr);
     } else {
         $cidr = explode('/', $proxy);
@@ -216,7 +216,7 @@ function proxy_match($remote_addr, $proxy)
 
         $cmp = function($b1, $b2, $m) {
             return $b1 & $m == $b2 & $m;
-        }
+        };
         $matched_bytes = array_map($cmp, $proxy_addr, $remote_addr, $mask);
         return !in_array(false, $matched_bytes);
     }
