@@ -198,27 +198,19 @@ function proxy_match($remote_addr, $proxy)
         $proxy_addr  = unpack('C*', inet_pton($cidr[0]));
         $remote_addr = unpack('C*', inet_pton($remote_addr));
 
-        $addr_len = count($remote_addr);
-        if (count($proxy_addr) != $addr_len) {
+        if (count($proxy_addr) != count($remote_addr)) {
             return false; // different protocols
         }
 
-        // first, fill with contiguous bits
-        $mask = str_repeat('f', $proxy_subnet >> 2);
-        // then append edge bits
-        switch ($proxy_subnet & 3) {
-            case 3: $mask .= 'e'; break;
-            case 2: $mask .= 'c'; break;
-            case 1: $mask .= '8';
+        // compare whole octets
+        $i = 1;
+        for (; $i <= $proxy_subnet >> 3; $i++) {
+            if ($proxy_addr[$i] != $remote_addr[$i]) return false;
         }
-        // finally, pad with zero bits, pack, and split
-        $mask = unpack('C*', pack('H*', str_pad($mask, $addr_len * 2, '0')));
 
-        $cmp = function($b1, $b2, $m) {
-            return (bool) (($b1 & $m) == ($b2 & $m));
-        };
-        $matched_bytes = array_map($cmp, $proxy_addr, $remote_addr, $mask);
-        return !in_array(false, $matched_bytes);
+        // compare partial octets if any
+        $mod = $proxy_subnet % 8;
+        return ($proxy_addr[$i] & $mod) == ($remote_addr[$i] & $mod);
     }
 }
 
