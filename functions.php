@@ -195,8 +195,8 @@ function proxy_match($remote_addr, $proxy)
     } else {
         $cidr = explode('/', $proxy);
         $proxy_subnet = (int) $cidr[1];
-        $proxy_addr  = str_split(inet_pton($cidr[0]));
-        $remote_addr = str_split(inet_pton($remote_addr));
+        $proxy_addr  = unpack('C*', inet_pton($cidr[0]));
+        $remote_addr = unpack('C*', inet_pton($remote_addr));
 
         $addr_len = count($remote_addr);
         if (count($proxy_addr) != $addr_len) {
@@ -212,7 +212,7 @@ function proxy_match($remote_addr, $proxy)
             case 1: $mask .= '8';
         }
         // finally, pad with zero bits, pack, and split
-        $mask = str_split(pack('H*', str_pad($mask, $addr_len * 2, '0')));
+        $mask = unpack('C*', pack('H*', str_pad($mask, $addr_len * 2, '0')));
 
         $cmp = function($b1, $b2, $m) {
             return $b1 & $m == $b2 & $m;
