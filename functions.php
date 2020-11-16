@@ -198,19 +198,25 @@ function proxy_match($remote_addr, $proxy)
         $proxy_addr  = unpack('C*', inet_pton($cidr[0]));
         $remote_addr = unpack('C*', inet_pton($remote_addr));
 
-        if (count($proxy_addr) != count($remote_addr)) {
+        $addr_len = count($remote_addr);
+        if (count($proxy_addr) != $addr_len) {
             return false; // different protocols
         }
 
         // compare whole octets
-        $i = 1;
-        for (; $i <= $proxy_subnet >> 3; $i++) {
+        $last_whole = $proxy_subnet >> 3;
+        for ($i = $last_whole; $i > 0; $i--) {
             if ($proxy_addr[$i] != $remote_addr[$i]) return false;
         }
 
         // compare partial octets if any
-        $mod = $proxy_subnet % 8;
-        return ($proxy_addr[$i] & $mod) == ($remote_addr[$i] & $mod);
+        $i = $last_whole + 1;
+        if ($i <= $addr_len) {
+            $mask = -1 << (8 - $proxy_subnet % 8) & 0xff;
+            return ($proxy_addr[$i] & $mask) == ($remote_addr[$i] & $mask);
+        } else {
+            return true;
+        }
     }
 }
 
